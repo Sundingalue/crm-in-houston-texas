@@ -219,7 +219,7 @@ export const dictionaryEs = {
       subtitle: "Datos del decisor",
       name: "Nombre completo",
       phone: "Teléfono",
-      title: "Cargo",
+      roleLabel: "Cargo",
     },
     account: {
       title: "Crear cuenta",
