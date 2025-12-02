@@ -1,4 +1,4 @@
-import type { Workspace } from "@prisma/client";
+// NO importamos nada de @prisma/client aquí
 
 export type ImapConfig = {
   host: string;
@@ -23,14 +23,17 @@ export const readImapEnv = (): ImapConfig | null => {
   return { host, port, user, password, tls };
 };
 
+// Tipo mínimo para referirnos a un workspace desde aquí
+type WorkspaceRef = { id: string };
+
 /**
  * Por ahora DESACTIVAMOS la sincronización IMAP para evitar
- * problemas de build con dependencias internas (thread-stream, tests, etc.).
+ * problemas de build con dependencias internas.
  *
  * En producción actual, esta función simplemente devuelve un arreglo vacío.
- * Más adelante, cuando queramos IMAP de verdad, aquí conectamos con ImapFlow (u otro).
+ * Más adelante, cuando queramos IMAP real, aquí conectamos con ImapFlow (u otro).
  */
-export async function fetchAndStoreEmails(workspace: Workspace) {
+export async function fetchAndStoreEmails(workspace: WorkspaceRef) {
   const config = readImapEnv();
 
   // Si no hay configuración IMAP, devolvemos vacío.
@@ -41,7 +44,6 @@ export async function fetchAndStoreEmails(workspace: Workspace) {
     return [];
   }
 
-  // Aquí irá la lógica real de lectura IMAP en el futuro.
   console.warn(
     `[IMAP] La sincronización IMAP está deshabilitada en este despliegue. No se están leyendo correos todavía.`
   );
