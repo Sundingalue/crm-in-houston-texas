@@ -1,15 +1,26 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db/client";
-import { ensureFeatureEnabled, requireWorkspaceId } from "@/lib/db/workspace";
-import { CampaignChannel, CampaignStatus } from "@prisma/client";
+import {
+  ensureFeatureEnabled,
+  requireWorkspaceId,
+} from "@/lib/db/workspace";
 import { ensurePermission } from "@/lib/auth/permissions";
+
+// definimos los valores de enums igual que en Prisma
+const CAMPAIGN_CHANNELS = ["email", "whatsapp", "outbound"] as const;
+const CAMPAIGN_STATUSES = [
+  "borrador",
+  "activo",
+  "pausa",
+  "completado",
+] as const;
 
 const campaignSchema = z.object({
   name: z.string(),
   subject: z.string(),
-  channel: z.nativeEnum(CampaignChannel),
-  status: z.nativeEnum(CampaignStatus).default(CampaignStatus.borrador),
+  channel: z.enum(CAMPAIGN_CHANNELS),
+  status: z.enum(CAMPAIGN_STATUSES).default("borrador"),
   body: z.string().optional(),
   segment: z.string().optional(),
 });
@@ -23,6 +34,7 @@ const campaignDeleteSchema = z.object({ id: z.string() });
 export async function GET() {
   const workspaceId = await requireWorkspaceId();
   const enabled = await ensureFeatureEnabled(workspaceId, "campaigns");
+
   if (!enabled) {
     return NextResponse.json(
       { message: "CAMPAIGNS_DISABLED" },
@@ -43,6 +55,7 @@ export async function GET() {
 export async function POST(request: Request) {
   const workspaceId = await requireWorkspaceId();
   const enabled = await ensureFeatureEnabled(workspaceId, "campaigns");
+
   if (!enabled) {
     return NextResponse.json(
       { message: "CAMPAIGNS_DISABLED" },
@@ -75,6 +88,7 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   const workspaceId = await requireWorkspaceId();
   const enabled = await ensureFeatureEnabled(workspaceId, "campaigns");
+
   if (!enabled) {
     return NextResponse.json(
       { message: "CAMPAIGNS_DISABLED" },
@@ -98,12 +112,16 @@ export async function PATCH(request: Request) {
     },
   });
 
-  return NextResponse.json({ message: "Campaña actualizada", campaign });
+  return NextResponse.json({
+    message: "Campaña actualizada",
+    campaign,
+  });
 }
 
 export async function DELETE(request: Request) {
   const workspaceId = await requireWorkspaceId();
   const enabled = await ensureFeatureEnabled(workspaceId, "campaigns");
+
   if (!enabled) {
     return NextResponse.json(
       { message: "CAMPAIGNS_DISABLED" },

@@ -3,24 +3,29 @@ import { z } from "zod";
 import { prisma } from "@/lib/db/client";
 import bcrypt from "bcryptjs";
 import { requireWorkspaceId } from "@/lib/db/workspace";
-import { UserRole } from "@prisma/client";
 import { ensurePermission, isSuperAdmin } from "@/lib/auth/permissions";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/options";
 
+// Definimos los roles explícitamente (igual que en Prisma)
+const USER_ROLES = ["admin", "manager", "sales"] as const;
+type UserRole = (typeof USER_ROLES)[number];
+
+const userRoleEnum = z.enum(USER_ROLES);
+
 const inviteSchema = z.object({
   email: z.string().email(),
   name: z.string().min(2),
-  role: z.nativeEnum(UserRole).optional(),
-  roleId: z.string().optional(), // rol dentro del workspace (tabla Role)
+  role: userRoleEnum.optional(),
+  roleId: z.string().optional(),
 });
 
 const updateSchema = z.object({
   id: z.string(),
   name: z.string().min(2),
-  role: z.nativeEnum(UserRole),      // rol global del usuario (User.role)
+  role: userRoleEnum,
   active: z.boolean().optional(),
-  roleId: z.string().optional(),    // rol dentro del workspace (UserWorkspace.roleId)
+  roleId: z.string().optional(),
 });
 
 const deleteSchema = z.object({ id: z.string() });
@@ -51,6 +56,7 @@ export async function GET() {
 export async function POST(request: Request) {
   const workspaceId = await requireWorkspaceId();
   await ensurePermission(workspaceId, "settings", "create");
+
   const payload = inviteSchema.parse(await request.json());
 
   const existing = await prisma.user.findUnique({
@@ -59,20 +65,21 @@ export async function POST(request: Request) {
 
   const hashedPassword = await bcrypt.hash("Temporal123!", 12);
 
-  const user = existing
-    ? existing
-    : await prisma.user.create({
-        data: {
-          name: payload.name,
-          email: payload.email,
-          // Rol global por defecto si no viene
-          role: payload.role ?? UserRole.sales,
-          hashedPassword,
-        },
-      });
+  const user =
+    existing ??
+    (await prisma.user.create({
+      data: {
+        name: payload.name,
+        email: payload.email,
+        role: payload.role ?? ("sales" as UserRole),
+        hashedPassword,
+      },
+    }));
 
   await prisma.userWorkspace.upsert({
-    where: { userId_workspaceId: { userId: user.id, workspaceId } },
+    where: {
+      userId_workspaceId: { userId: user.id, workspaceId },
+    },
     update: { roleId: payload.roleId },
     create: {
       userId: user.id,
@@ -90,20 +97,23 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   const workspaceId = await requireWorkspaceId();
   await ensurePermission(workspaceId, "settings", "edit");
+
   const payload = updateSchema.parse(await request.json());
 
   const user = await prisma.user.update({
     where: { id: payload.id, workspaceId },
     data: {
       name: payload.name,
-      role: payload.role,              // actualizamos rol global
+      role: payload.role,
       active: payload.active ?? true,
     },
   });
 
   if (payload.roleId) {
     await prisma.userWorkspace.upsert({
-      where: { userId_workspaceId: { userId: user.id, workspaceId } },
+      where: {
+        userId_workspaceId: { userId: user.id, workspaceId },
+      },
       update: { roleId: payload.roleId },
       create: {
         userId: user.id,
@@ -113,7 +123,10 @@ export async function PATCH(request: Request) {
     });
   }
 
-  return NextResponse.json({ message: "Usuario actualizado", user });
+  return NextResponse.json({
+    message: "Usuario actualizado",
+    user,
+  });
 }
 
 export async function DELETE(request: Request) {
@@ -121,7 +134,7 @@ export async function DELETE(request: Request) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.email || isSuperAdmin(session.user.email)) {
-    // superadmin puede borrar sin restricciones adicionales
+    // superadmin puede borrar sin chequear permisos de workspace
   } else {
     await ensurePermission(workspaceId, "settings", "delete");
   }

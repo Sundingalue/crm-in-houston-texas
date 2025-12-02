@@ -16,14 +16,20 @@ export async function GET() {
 
   const perms = await prisma.permission.findMany({
     where: { role: { workspaceId } },
-    include: { role: { select: { id: true, name: true } } },
+    include: {
+      role: {
+        select: { id: true, name: true },
+      },
+    },
   });
 
   const userPerms = await prisma.userWorkspace.findMany({
     where: { workspaceId },
     include: {
       permissions: true,
-      user: { select: { id: true, name: true, email: true } },
+      user: {
+        select: { id: true, name: true, email: true },
+      },
     },
   });
 
@@ -33,10 +39,16 @@ export async function GET() {
 export async function POST(request: Request) {
   const workspaceId = await requireWorkspaceId();
   await ensurePermission(workspaceId, "settings", "edit");
+
   const payload = assignSchema.parse(await request.json());
 
   const membership = await prisma.userWorkspace.findUnique({
-    where: { userId_workspaceId: { userId: payload.userId, workspaceId } },
+    where: {
+      userId_workspaceId: {
+        userId: payload.userId,
+        workspaceId,
+      },
+    },
     include: { permissions: true },
   });
 
@@ -48,29 +60,18 @@ export async function POST(request: Request) {
   }
 
   const already = membership.permissions.find(
-    (p) => p.module === payload.module && p.action === payload.action
+    (p: { module: string; action: string }) =>
+      p.module === payload.module && p.action === payload.action
   );
+
   if (already) {
     return NextResponse.json({ message: "PERMISSION_EXISTS" }, { status: 200 });
-  }
-
-  // El permiso debe estar asociado a un Role (roleId obligatorio en el modelo Permission)
-  if (!membership.roleId) {
-    return NextResponse.json(
-      { message: "USER_HAS_NO_ROLE" },
-      { status: 400 }
-    );
   }
 
   const perm = await prisma.permission.create({
     data: {
       module: payload.module,
       action: payload.action,
-      // Vinculamos el permiso al Role del usuario en este workspace
-      role: {
-        connect: { id: membership.roleId },
-      },
-      // Además lo asociamos explícitamente al UserWorkspace mediante la relación many-to-many
       userWorkspaces: {
         connect: { id: membership.id },
       },
