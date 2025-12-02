@@ -22,22 +22,35 @@ type Workspace = {
   campaigns?: { id: string }[];
 };
 
-const emptyForm = {
+type WorkspaceForm = {
+  id: string;
+  name: string;
+  domain: string;
+  plan: Workspace["plan"];
+  active: boolean;
+  enableAi: boolean;
+  enableCalls: boolean;
+  enableWhatsApp: boolean;
+  enableAutomations: boolean;
+  enableCampaigns: boolean;
+};
+
+const emptyForm: WorkspaceForm = {
+  id: "",
   name: "",
   domain: "",
-  plan: "basic" as const,
+  plan: "basic",
   active: true,
   enableAi: true,
   enableCalls: true,
   enableWhatsApp: true,
   enableAutomations: true,
   enableCampaigns: true,
-  id: "",
 };
 
 export function WorkspacePanel() {
   const [list, setList] = useState<Workspace[]>([]);
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState<WorkspaceForm>(emptyForm);
   const [status, setStatus] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -118,7 +131,9 @@ export function WorkspacePanel() {
             <select
               className="mt-1 w-full rounded-2xl border border-white/15 bg-transparent px-3 py-2"
               value={form.plan}
-              onChange={(e) => setForm({ ...form, plan: e.target.value as Workspace["plan"] })}
+              onChange={(e) =>
+                setForm({ ...form, plan: e.target.value as Workspace["plan"] })
+              }
             >
               <option value="basic">basic</option>
               <option value="pro">pro</option>
@@ -126,24 +141,59 @@ export function WorkspacePanel() {
             </select>
           </label>
           <label className="flex items-center gap-2 text-xs uppercase tracking-widest text-current/70">
-            <input type="checkbox" checked={form.active} onChange={(e) => setForm({ ...form, active: e.target.checked })} />
+            <input
+              type="checkbox"
+              checked={form.active}
+              onChange={(e) => setForm({ ...form, active: e.target.checked })}
+            />
             Active
           </label>
           <div className="grid grid-cols-2 gap-2 text-xs">
             <label className="flex items-center gap-2">
-              <input type="checkbox" checked={form.enableAi} onChange={(e) => setForm({ ...form, enableAi: e.target.checked })} /> AI
+              <input
+                type="checkbox"
+                checked={form.enableAi}
+                onChange={(e) => setForm({ ...form, enableAi: e.target.checked })}
+              />{" "}
+              AI
             </label>
             <label className="flex items-center gap-2">
-              <input type="checkbox" checked={form.enableCalls} onChange={(e) => setForm({ ...form, enableCalls: e.target.checked })} /> Calls
+              <input
+                type="checkbox"
+                checked={form.enableCalls}
+                onChange={(e) => setForm({ ...form, enableCalls: e.target.checked })}
+              />{" "}
+              Calls
             </label>
             <label className="flex items-center gap-2">
-              <input type="checkbox" checked={form.enableWhatsApp} onChange={(e) => setForm({ ...form, enableWhatsApp: e.target.checked })} /> WhatsApp
+              <input
+                type="checkbox"
+                checked={form.enableWhatsApp}
+                onChange={(e) =>
+                  setForm({ ...form, enableWhatsApp: e.target.checked })
+                }
+              />{" "}
+              WhatsApp
             </label>
             <label className="flex items-center gap-2">
-              <input type="checkbox" checked={form.enableAutomations} onChange={(e) => setForm({ ...form, enableAutomations: e.target.checked })} /> Automations
+              <input
+                type="checkbox"
+                checked={form.enableAutomations}
+                onChange={(e) =>
+                  setForm({ ...form, enableAutomations: e.target.checked })
+                }
+              />{" "}
+              Automations
             </label>
             <label className="flex items-center gap-2">
-              <input type="checkbox" checked={form.enableCampaigns} onChange={(e) => setForm({ ...form, enableCampaigns: e.target.checked })} /> Campaigns
+              <input
+                type="checkbox"
+                checked={form.enableCampaigns}
+                onChange={(e) =>
+                  setForm({ ...form, enableCampaigns: e.target.checked })
+                }
+              />{" "}
+              Campaigns
             </label>
           </div>
           <div className="flex gap-3">
@@ -172,15 +222,20 @@ export function WorkspacePanel() {
             <div key={ws.id} className="rounded-2xl border border-white/15 p-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-current/60">{ws.id.slice(0, 6)}…</p>
+                  <p className="text-xs uppercase tracking-[0.3em] text-current/60">
+                    {ws.id.slice(0, 6)}…
+                  </p>
                   <p className="text-lg font-semibold">{ws.name}</p>
                   <p className="text-xs text-current/70">{ws.domain}</p>
                   <p className="text-[11px] text-current/60">Plan: {ws.plan}</p>
                   <p className="text-[11px] text-current/60">
-                    Users {ws.users?.length ?? 0} · Leads {ws.leads?.length ?? 0} · Messages {ws.messages?.length ?? 0}
+                    Users {ws.users?.length ?? 0} · Leads {ws.leads?.length ?? 0} ·
+                    Messages {ws.messages?.length ?? 0}
                   </p>
                   <p className="text-[11px] text-current/60">
-                    AI {ws.enableAi ? "on" : "off"} · Calls {ws.enableCalls ? "on" : "off"} · WhatsApp {ws.enableWhatsApp ? "on" : "off"}
+                    AI {ws.enableAi ? "on" : "off"} · Calls{" "}
+                    {ws.enableCalls ? "on" : "off"} · WhatsApp{" "}
+                    {ws.enableWhatsApp ? "on" : "off"}
                   </p>
                 </div>
                 <div className="flex gap-2">
@@ -202,7 +257,9 @@ export function WorkspacePanel() {
               </div>
             </div>
           ))}
-          {list.length === 0 ? <p className="text-xs text-current/60">No workspaces yet.</p> : null}
+          {list.length === 0 ? (
+            <p className="text-xs text-current/60">No workspaces yet.</p>
+          ) : null}
         </div>
       </div>
     </Card>
