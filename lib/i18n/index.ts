@@ -1,16 +1,17 @@
-import { dictionaryEs } from "./es";
-import { dictionaryEn } from "./en";
-
-export type Locale = "es" | "en";
+import "server-only";
+import dictionaryEn from "./en";
+import dictionaryEs from "./es";
 
 export const dictionaries = {
-  es: dictionaryEs,
   en: dictionaryEn,
-};
+  es: dictionaryEs,
+} as const;
 
-export const LANGUAGE_COOKIE_KEY = "aurora-locale";
+// "en" | "es"
+export type Locale = keyof typeof dictionaries;
 
-export type AppDictionary = typeof dictionaryEs;
+// Diccionario puede ser el de inglés o el de español
+export type AppDictionary = (typeof dictionaries)[Locale];
 
 export const getDictionary = (locale: Locale = "es"): AppDictionary => {
   return dictionaries[locale] ?? dictionaryEs;

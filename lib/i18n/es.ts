@@ -257,3 +257,4 @@ export const dictionaryEs = {
 } as const;
 
 export type DictionaryEs = typeof dictionaryEs;
+export default dictionaryEs;
