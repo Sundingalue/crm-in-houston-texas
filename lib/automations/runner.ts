@@ -1,9 +1,11 @@
 import { prisma } from "@/lib/db/client";
+import type { Prisma } from "@prisma/client";
 
 export type AutomationPayload = {
   name: string;
   trigger: string;
-  actions: Record<string, unknown>;
+  // Usamos el tipo de Prisma para campos JSON
+  actions: Prisma.InputJsonValue;
   workspaceId: string;
 };
 
@@ -14,7 +16,7 @@ export async function registerAutomation(payload: AutomationPayload) {
     data: {
       name: payload.name,
       trigger: payload.trigger,
-      actions: payload.actions,
+      actions: payload.actions, // ahora ya es del tipo correcto
       workspaceId: payload.workspaceId,
     },
   });
