@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { Card } from "@/components/ui/Card";
 import { useDictionary } from "@/components/providers/LanguageProvider";
 
@@ -180,7 +180,12 @@ export function CreateDealForm({ accounts, leads, stages }: { accounts?: Option[
       const res = await fetch("/api/crm/deals", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, value: Number(form.value), accountId: form.accountId || undefined, leadId: form.leadId || undefined }),
+        body: JSON.stringify({
+          ...form,
+          value: Number(form.value),
+          accountId: form.accountId || undefined,
+          leadId: form.leadId || undefined,
+        }),
       });
       const body = await res.json();
       setStatus(res.ok ? dict.forms.created : body.message ?? dict.errors.default);
