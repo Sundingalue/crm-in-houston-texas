@@ -12,14 +12,15 @@ const inviteSchema = z.object({
   email: z.string().email(),
   name: z.string().min(2),
   role: z.nativeEnum(UserRole).optional(),
-  roleId: z.string().optional(),
+  roleId: z.string().optional(), // rol dentro del workspace (tabla Role)
 });
 
 const updateSchema = z.object({
   id: z.string(),
   name: z.string().min(2),
-  role: z.nativeEnum(UserRole),
+  role: z.nativeEnum(UserRole),      // rol global del usuario (User.role)
   active: z.boolean().optional(),
+  roleId: z.string().optional(),    // rol dentro del workspace (UserWorkspace.roleId)
 });
 
 const deleteSchema = z.object({ id: z.string() });
@@ -27,6 +28,7 @@ const deleteSchema = z.object({ id: z.string() });
 export async function GET() {
   const workspaceId = await requireWorkspaceId();
   await ensurePermission(workspaceId, "settings", "view");
+
   const users = await prisma.user.findMany({
     where: { workspaceId },
     select: {
@@ -42,6 +44,7 @@ export async function GET() {
     },
     orderBy: { createdAt: "asc" },
   });
+
   return NextResponse.json(users);
 }
 
@@ -49,14 +52,20 @@ export async function POST(request: Request) {
   const workspaceId = await requireWorkspaceId();
   await ensurePermission(workspaceId, "settings", "create");
   const payload = inviteSchema.parse(await request.json());
-  const existing = await prisma.user.findUnique({ where: { email: payload.email } });
+
+  const existing = await prisma.user.findUnique({
+    where: { email: payload.email },
+  });
+
   const hashedPassword = await bcrypt.hash("Temporal123!", 12);
+
   const user = existing
     ? existing
     : await prisma.user.create({
         data: {
           name: payload.name,
           email: payload.email,
+          // Rol global por defecto si no viene
           role: payload.role ?? UserRole.sales,
           hashedPassword,
         },
@@ -65,8 +74,13 @@ export async function POST(request: Request) {
   await prisma.userWorkspace.upsert({
     where: { userId_workspaceId: { userId: user.id, workspaceId } },
     update: { roleId: payload.roleId },
-    create: { userId: user.id, workspaceId, roleId: payload.roleId },
+    create: {
+      userId: user.id,
+      workspaceId,
+      roleId: payload.roleId,
+    },
   });
+
   return NextResponse.json({
     message: "Invitación registrada",
     user,
@@ -77,10 +91,12 @@ export async function PATCH(request: Request) {
   const workspaceId = await requireWorkspaceId();
   await ensurePermission(workspaceId, "settings", "edit");
   const payload = updateSchema.parse(await request.json());
+
   const user = await prisma.user.update({
     where: { id: payload.id, workspaceId },
     data: {
       name: payload.name,
+      role: payload.role,              // actualizamos rol global
       active: payload.active ?? true,
     },
   });
@@ -89,21 +105,32 @@ export async function PATCH(request: Request) {
     await prisma.userWorkspace.upsert({
       where: { userId_workspaceId: { userId: user.id, workspaceId } },
       update: { roleId: payload.roleId },
-      create: { userId: user.id, workspaceId, roleId: payload.roleId },
+      create: {
+        userId: user.id,
+        workspaceId,
+        roleId: payload.roleId,
+      },
     });
   }
+
   return NextResponse.json({ message: "Usuario actualizado", user });
 }
 
 export async function DELETE(request: Request) {
   const workspaceId = await requireWorkspaceId();
   const session = await getServerSession(authOptions);
+
   if (!session?.user?.email || isSuperAdmin(session.user.email)) {
-    // superadmin can delete across; already allowed
+    // superadmin puede borrar sin restricciones adicionales
   } else {
     await ensurePermission(workspaceId, "settings", "delete");
   }
+
   const payload = deleteSchema.parse(await request.json());
-  await prisma.user.delete({ where: { id: payload.id, workspaceId } });
+
+  await prisma.user.delete({
+    where: { id: payload.id, workspaceId },
+  });
+
   return NextResponse.json({ message: "Usuario eliminado" });
 }
