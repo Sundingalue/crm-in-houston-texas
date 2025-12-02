@@ -1,0 +1,437 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["windows", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+model Workspace {
+  id             String     @id @default(cuid())
+  name           String
+  domain         String     @unique
+  primaryColor   String?
+  secondaryColor String?
+  logoUrl        String?
+  plan           Plan       @default(basic)
+  enableAi       Boolean    @default(true)
+  enableCalls    Boolean    @default(true)
+  enableWhatsApp Boolean    @default(true)
+  enableAutomations Boolean @default(true)
+  enableCampaigns Boolean   @default(true)
+  users          User[]
+  leads          Lead[]
+  contacts       Contact[]
+  companies      Company[]
+  deals          Deal[]
+  activities     Activity[]
+  campaigns      Campaign[]
+  messages       Message[]
+  emailMessages  EmailMessage[]
+  automations    Automation[]
+  domains        WorkspaceDomain[]
+  roles          Role[]
+  memberships    UserWorkspace[]
+  pipelineStages PipelineStage[]
+  agents         Agent[]
+  customFields   CustomField[]
+  attachments    Attachment[]
+  segments       Segment[]
+  rules          AutomationRule[]
+  invites        Invite[]
+  createdAt      DateTime   @default(now())
+}
+
+model User {
+  id             String     @id @default(cuid())
+  name           String
+  email          String     @unique
+  hashedPassword String
+  role           UserRole
+  active         Boolean    @default(true)
+  workspace      Workspace? @relation(fields: [workspaceId], references: [id])
+  workspaceId    String?
+  memberships    UserWorkspace[]
+  emailVerified  DateTime?
+  image          String?
+  accounts       Account[]
+  sessions       Session[]
+  leads          Lead[]     @relation("LeadOwner")
+  activities     Activity[] @relation("UserActivities")
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+}
+
+model Lead {
+  id          String      @id @default(cuid())
+  name        String
+  company     String
+  status      LeadStatus  @default(nuevo)
+  source      String
+  createdAt   DateTime    @default(now())
+  workspace   Workspace   @relation(fields: [workspaceId], references: [id])
+  workspaceId String
+  owner       User?       @relation("LeadOwner", fields: [ownerId], references: [id])
+  ownerId     String?
+  activities  Activity[]  @relation("LeadActivities")
+  deals       Deal[]
+  emailMessages EmailMessage[]
+}
+
+model Contact {
+  id          String      @id @default(cuid())
+  name        String
+  title       String?
+  email       String
+  phone       String?
+  workspace   Workspace   @relation(fields: [workspaceId], references: [id])
+  workspaceId String
+  account     Company?    @relation(fields: [accountId], references: [id])
+  accountId   String?
+  messages    Message[]
+  emailMessages EmailMessage[]
+  createdAt   DateTime    @default(now())
+}
+
+model Company {
+  id          String      @id @default(cuid())
+  name        String
+  industry    String?
+  size        AccountSize
+  workspace   Workspace   @relation(fields: [workspaceId], references: [id])
+  workspaceId String
+  contacts    Contact[]
+  deals       Deal[]
+  createdAt   DateTime    @default(now())
+}
+
+model Deal {
+  id           String     @id @default(cuid())
+  name         String
+  value        Float
+  stage        DealStage
+  closeDate    DateTime?
+  workspace    Workspace  @relation(fields: [workspaceId], references: [id])
+  workspaceId  String
+  account      Company?   @relation(fields: [accountId], references: [id])
+  accountId    String?
+  lead         Lead?      @relation(fields: [leadId], references: [id])
+  leadId       String?
+  createdAt    DateTime   @default(now())
+}
+
+model Activity {
+  id          String        @id @default(cuid())
+  type        ActivityType
+  summary     String
+  createdAt   DateTime      @default(now())
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id])
+  workspaceId String
+  lead        Lead?         @relation("LeadActivities", fields: [leadId], references: [id])
+  leadId      String?
+  user        User?         @relation("UserActivities", fields: [userId], references: [id])
+  userId      String?
+  notes       String?
+  durationSec Int?
+  recordingUrl String?
+  transcript   String?
+  aiSummary    String?
+}
+
+model Campaign {
+  id          String         @id @default(cuid())
+  name        String
+  subject     String
+  status      CampaignStatus
+  channel     CampaignChannel
+  sent        Int            @default(0)
+  opened      Int            @default(0)
+  clicked     Int            @default(0)
+  workspace   Workspace      @relation(fields: [workspaceId], references: [id])
+  workspaceId String
+  createdAt   DateTime       @default(now())
+}
+
+model Message {
+  id          String          @id @default(cuid())
+  channel     MessageChannel
+  body        String
+  contact     Contact?        @relation(fields: [contactId], references: [id])
+  contactId   String?
+  workspace   Workspace       @relation(fields: [workspaceId], references: [id])
+  workspaceId String
+  sentAt      DateTime        @default(now())
+  metadata    Json?
+}
+
+model Attachment {
+  id           String      @id @default(cuid())
+  name         String
+  url          String
+  entityType   String
+  entityId     String
+  workspace    Workspace   @relation(fields: [workspaceId], references: [id])
+  workspaceId  String
+  createdAt    DateTime    @default(now())
+}
+
+model EmailMessage {
+  id           String      @id @default(cuid())
+  subject      String
+  from         String
+  to           String
+  cc           String?
+  bcc          String?
+  body         String
+  receivedAt   DateTime    @default(now())
+  workspace    Workspace   @relation(fields: [workspaceId], references: [id])
+  workspaceId  String
+  contact      Contact?    @relation(fields: [contactId], references: [id])
+  contactId    String?
+  lead         Lead?       @relation(fields: [leadId], references: [id])
+  leadId       String?
+  metadata     Json?
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Invite {
+  id          String    @id @default(cuid())
+  email       String
+  token       String    @unique
+  expiresAt   DateTime  @default(now())
+  accepted    Boolean   @default(false)
+  roleId      String?
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  workspaceId String
+  createdAt   DateTime  @default(now())
+}
+
+model WorkspaceDomain {
+  id           String    @id @default(cuid())
+  domain       String    @unique
+  workspace    Workspace @relation(fields: [workspaceId], references: [id])
+  workspaceId  String
+  active       Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+}
+
+model Role {
+  id          String     @id @default(cuid())
+  name        String
+  description String?
+  workspace   Workspace  @relation(fields: [workspaceId], references: [id])
+  workspaceId String
+  permissions Permission[]
+  users       UserWorkspace[]
+  createdAt   DateTime   @default(now())
+}
+
+model Permission {
+  id        String   @id @default(cuid())
+  module    String
+  action    String
+  role      Role     @relation(fields: [roleId], references: [id])
+  roleId    String
+  userWorkspaces UserWorkspace[] @relation("UserWorkspacePermissions")
+}
+
+model UserWorkspace {
+  id           String    @id @default(cuid())
+  user         User      @relation(fields: [userId], references: [id])
+  userId       String
+  workspace    Workspace @relation(fields: [workspaceId], references: [id])
+  workspaceId  String
+  role         Role?     @relation(fields: [roleId], references: [id])
+  roleId       String?
+  permissions  Permission[] @relation("UserWorkspacePermissions")
+  createdAt    DateTime  @default(now())
+
+  @@unique([userId, workspaceId])
+}
+
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?
+  access_token       String?
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?
+  session_state      String?
+  user               User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+enum UserRole {
+  admin
+  manager
+  sales
+}
+
+enum LeadStatus {
+  nuevo
+  contactado
+  calificado
+  negociacion
+  ganado
+  perdido
+}
+
+enum AccountSize {
+  startup
+  pyme
+  enterprise
+}
+
+enum DealStage {
+  descubrimiento
+  calificacion
+  propuesta
+  negociacion
+  cierre
+  ganado
+  perdido
+}
+
+enum ActivityType {
+  llamada
+  email
+  tarea
+  nota
+  whatsapp
+}
+
+enum CampaignStatus {
+  borrador
+  activo
+  pausa
+  completado
+}
+
+enum CampaignChannel {
+  email
+  whatsapp
+  outbound
+}
+
+enum MessageChannel {
+  email
+  whatsapp
+  social
+}
+
+enum Plan {
+  basic
+  pro
+  premium
+}
+
+model PipelineStage {
+  id          String     @id @default(cuid())
+  name        String
+  order       Int
+  workspace   Workspace  @relation(fields: [workspaceId], references: [id])
+  workspaceId String
+  createdAt   DateTime   @default(now())
+}
+
+model CustomField {
+  id          String     @id @default(cuid())
+  name        String
+  entityType  String
+  fieldType   String
+  workspace   Workspace  @relation(fields: [workspaceId], references: [id])
+  workspaceId String
+  values      CustomFieldValue[]
+  createdAt   DateTime   @default(now())
+}
+
+model CustomFieldValue {
+  id           String       @id @default(cuid())
+  field        CustomField  @relation(fields: [fieldId], references: [id])
+  fieldId      String
+  entityId     String
+  value        String
+  createdAt    DateTime     @default(now())
+}
+
+model Segment {
+  id          String     @id @default(cuid())
+  name        String
+  entityType  String
+  filter      Json
+  workspace   Workspace  @relation(fields: [workspaceId], references: [id])
+  workspaceId String
+  createdAt   DateTime   @default(now())
+}
+
+model Agent {
+  id          String     @id @default(cuid())
+  name        String
+  description String?
+  instructions String?
+  model       String?
+  voiceId     String?
+  phoneNumber String?
+  workspace   Workspace  @relation(fields: [workspaceId], references: [id])
+  workspaceId String
+  messages    AgentMessage[]
+  metadata    Json?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model AgentMessage {
+  id        String   @id @default(cuid())
+  agent     Agent    @relation(fields: [agentId], references: [id])
+  agentId   String
+  role      String
+  content   String
+  createdAt DateTime @default(now())
+}
+
+model AutomationRule {
+  id          String     @id @default(cuid())
+  name        String
+  trigger     Json
+  conditions  Json?
+  actions     Json
+  active      Boolean   @default(true)
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  workspaceId String
+  createdAt   DateTime  @default(now())
+}
+
+model Automation {
+  id          String     @id @default(cuid())
+  name        String
+  trigger     String
+  actions     Json
+  workspace   Workspace  @relation(fields: [workspaceId], references: [id])
+  workspaceId String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}

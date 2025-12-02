@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+[data-theme="claro"] .text-white {
+  color: #0f172a !important;
+}
+
+[data-theme="claro"] .text-white\/80 {
+  color: rgba(15, 23, 42, 0.8) !important;
+}
+
+[data-theme="claro"] .text-white\/70 {
+  color: rgba(15, 23, 42, 0.7) !important;
+}
+
+[data-theme="claro"] .text-white\/60 {
+  color: rgba(15, 23, 42, 0.6) !important;
+}
+
+[data-theme="claro"] .text-white\/50 {
+  color: rgba(15, 23, 42, 0.5) !important;
+}
+
+[data-theme="claro"] .border-white\/10 {
+  border-color: rgba(15, 23, 42, 0.08) !important;
+}
+
+[data-theme="claro"] .border-white\/15 {
+  border-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+[data-theme="claro"] .border-white\/20 {
+  border-color: rgba(15, 23, 42, 0.18) !important;
+}
+
+[data-theme="claro"] .border-white\/30 {
+  border-color: rgba(15, 23, 42, 0.28) !important;
+}
+
+[data-theme="claro"] .border-white\/40 {
+  border-color: rgba(15, 23, 42, 0.4) !important;
+}
