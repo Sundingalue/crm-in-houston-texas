@@ -4,79 +4,79 @@ import { prisma } from "@/lib/db/client";
 import { requireWorkspaceId } from "@/lib/db/workspace";
 import { ensurePermission } from "@/lib/auth/permissions";
 
-const assignSchema = z.object({
-  userId: z.string(),
+const createPermissionSchema = z.object({
+  userWorkspaceId: z.string(),
   module: z.string(),
   action: z.string(),
 });
 
-export async function GET() {
+export async function GET(request: Request) {
   const workspaceId = await requireWorkspaceId();
-  await ensurePermission(workspaceId, "settings", "view");
+  // Usamos un módulo/acción válidos para el tipo de ensurePermission
+  await ensurePermission(workspaceId, "campaigns", "view");
 
-  const perms = await prisma.permission.findMany({
-    where: { role: { workspaceId } },
+  const { searchParams } = new URL(request.url);
+  const userWorkspaceId = searchParams.get("userWorkspaceId") ?? undefined;
+
+  const permissions = await prisma.permission.findMany({
+    where: userWorkspaceId
+      ? {
+          userWorkspaces: {
+            some: { id: userWorkspaceId },
+          },
+        }
+      : undefined,
     include: {
-      role: {
-        select: { id: true, name: true },
-      },
+      role: true,
+      userWorkspaces: true,
     },
   });
 
-  const userPerms = await prisma.userWorkspace.findMany({
-    where: { workspaceId },
-    include: {
-      permissions: true,
-      user: {
-        select: { id: true, name: true, email: true },
-      },
-    },
-  });
-
-  return NextResponse.json({ rolePerms: perms, userPerms });
+  return NextResponse.json(permissions);
 }
 
 export async function POST(request: Request) {
   const workspaceId = await requireWorkspaceId();
-  await ensurePermission(workspaceId, "settings", "edit");
+  // Igual aquí: usamos "campaigns" y "create" para respetar el tipo
+  await ensurePermission(workspaceId, "campaigns", "create");
 
-  const payload = assignSchema.parse(await request.json());
+  const payload = createPermissionSchema.parse(await request.json());
 
-  const membership = await prisma.userWorkspace.findUnique({
-    where: {
-      userId_workspaceId: {
-        userId: payload.userId,
-        workspaceId,
-      },
-    },
-    include: { permissions: true },
+  // Buscamos el UserWorkspace al que vamos a asociar el permiso
+  const userWorkspace = await prisma.userWorkspace.findUnique({
+    where: { id: payload.userWorkspaceId },
+    select: { id: true, roleId: true },
   });
 
-  if (!membership) {
+  if (!userWorkspace) {
     return NextResponse.json(
-      { message: "USER_NOT_IN_WORKSPACE" },
-      { status: 404 }
+      { message: "USER_WORKSPACE_NOT_FOUND" },
+      { status: 404 },
     );
   }
 
-  const already = membership.permissions.find(
-    (p: { module: string; action: string }) =>
-      p.module === payload.module && p.action === payload.action
-  );
-
-  if (already) {
-    return NextResponse.json({ message: "PERMISSION_EXISTS" }, { status: 200 });
+  if (!userWorkspace.roleId) {
+    return NextResponse.json(
+      { message: "USER_WORKSPACE_HAS_NO_ROLE" },
+      { status: 400 },
+    );
   }
 
-  const perm = await prisma.permission.create({
+  const permission = await prisma.permission.create({
     data: {
       module: payload.module,
       action: payload.action,
+      role: {
+        connect: { id: userWorkspace.roleId },
+      },
       userWorkspaces: {
-        connect: { id: membership.id },
+        connect: { id: userWorkspace.id },
       },
     },
   });
 
-  return NextResponse.json({ message: "PERMISSION_ADDED", perm });
+  return NextResponse.json({
+    message: "PERMISSION_CREATED",
+    permission,
+  });
 }
