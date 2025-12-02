@@ -1,5 +1,4 @@
 import type { Workspace } from "@prisma/client";
-import { ImapFlow } from "imapflow";
 
 export type ImapConfig = {
   host: string;
@@ -9,6 +8,10 @@ export type ImapConfig = {
   tls: boolean;
 };
 
+/**
+ * Lee la configuración IMAP desde variables de entorno.
+ * La dejamos igual para el futuro, pero de momento no se usa activamente.
+ */
 export const readImapEnv = (): ImapConfig | null => {
   const host = process.env.IMAP_HOST;
   const port = process.env.IMAP_PORT ? Number(process.env.IMAP_PORT) : 993;
@@ -20,78 +23,28 @@ export const readImapEnv = (): ImapConfig | null => {
   return { host, port, user, password, tls };
 };
 
-export async function connectImap(config: ImapConfig) {
-  const client = new ImapFlow({
-    host: config.host,
-    port: config.port,
-    secure: config.tls,
-    auth: {
-      user: config.user,
-      pass: config.password,
-    },
-  });
-  await client.connect();
-
-  return {
-    async listMessages() {
-      await client.mailboxOpen("INBOX");
-      const messages: Array<{
-        uid: string;
-        subject: string;
-        from: string;
-        to: string;
-        cc?: string;
-        bcc?: string;
-        body: string;
-        receivedAt: Date;
-      }> = [];
-      // Fetch latest 20 messages
-      for await (const msg of client.fetch({ seq: "1:*" }, { envelope: true, source: true, bodyStructure: true, uid: true })) {
-        const envelope = msg.envelope;
-        messages.push({
-          uid: String(msg.uid),
-          subject: envelope.subject ?? "(sin asunto)",
-          from: envelope.from?.map((f) => f.address).join(", ") ?? "",
-          to: envelope.to?.map((t) => t.address).join(", ") ?? "",
-          cc: envelope.cc?.map((t) => t.address).join(", "),
-          bcc: envelope.bcc?.map((t) => t.address).join(", "),
-          body: "", // body fetch skipped for speed
-          receivedAt: envelope.date ?? new Date(),
-        });
-        if (messages.length >= 20) break;
-      }
-      return messages;
-    },
-    async close() {
-      try {
-        await client.logout();
-      } catch {
-        // ignore
-      }
-    },
-  };
-}
-
+/**
+ * Por ahora DESACTIVAMOS la sincronización IMAP para evitar
+ * problemas de build con dependencias internas (thread-stream, tests, etc.).
+ *
+ * En producción actual, esta función simplemente devuelve un arreglo vacío.
+ * Más adelante, cuando queramos IMAP de verdad, aquí conectamos con ImapFlow (u otro).
+ */
 export async function fetchAndStoreEmails(workspace: Workspace) {
   const config = readImapEnv();
+
+  // Si no hay configuración IMAP, devolvemos vacío.
   if (!config) {
-    throw new Error("IMAP configuration is missing");
+    console.warn(
+      `[IMAP] IMAP no está configurado. No se sincronizan correos para el workspace ${workspace.id}.`
+    );
+    return [];
   }
 
-  const client = await connectImap(config);
-  try {
-    const messages = await client.listMessages();
-    return messages.map((msg) => ({
-      subject: msg.subject,
-      from: msg.from,
-      to: msg.to,
-      cc: msg.cc,
-      bcc: msg.bcc,
-      body: msg.body,
-      receivedAt: msg.receivedAt,
-      workspaceId: workspace.id,
-    }));
-  } finally {
-    await client.close();
-  }
+  // Aquí irá la lógica real de lectura IMAP en el futuro.
+  console.warn(
+    `[IMAP] La sincronización IMAP está deshabilitada en este despliegue. No se están leyendo correos todavía.`
+  );
+
+  return [];
 }
