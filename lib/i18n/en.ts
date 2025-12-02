@@ -1,4 +1,4 @@
-export const dictionaryEn = {
+const dictionaryEn = {
   locale: "en",
   common: {
     appName: "Aurora CRM",
@@ -254,3 +254,5 @@ export const dictionaryEn = {
 } as const;
 
 export type DictionaryEn = typeof dictionaryEn;
+
+export default dictionaryEn;

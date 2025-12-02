@@ -1,6 +1,10 @@
-import "server-only";
+// crm-project-template/lib/i18n/index.ts
+
 import dictionaryEn from "./en";
 import dictionaryEs from "./es";
+
+// Clave única para la cookie de idioma
+export const LANGUAGE_COOKIE_KEY = "aurora-lang";
 
 export const dictionaries = {
   en: dictionaryEn,
@@ -10,9 +14,10 @@ export const dictionaries = {
 // "en" | "es"
 export type Locale = keyof typeof dictionaries;
 
-// Diccionario puede ser el de inglés o el de español
+// Tipo de diccionario según el locale
 export type AppDictionary = (typeof dictionaries)[Locale];
 
+// Devuelve el diccionario según el locale (por defecto "es")
 export const getDictionary = (locale: Locale = "es"): AppDictionary => {
   return dictionaries[locale] ?? dictionaryEs;
 };
