@@ -3,24 +3,45 @@ import { z } from "zod";
 import { prisma } from "@/lib/db/client";
 import { requireWorkspaceId } from "@/lib/db/workspace";
 import { ensurePermission } from "@/lib/auth/permissions";
+import { Prisma } from "@prisma/client";
 
 const segmentSchema = z.object({
   name: z.string(),
   entityType: z.string(),
-  filter: z.object({ status: z.array(z.string()).optional(), ownerId: z.string().optional() }).passthrough(),
+  filter: z
+    .object({
+      status: z.array(z.string()).optional(),
+      ownerId: z.string().optional(),
+    })
+    .passthrough(),
 });
 
 export async function GET() {
   const workspaceId = await requireWorkspaceId();
   await ensurePermission(workspaceId, "campaigns", "view");
-  const segments = await prisma.segment.findMany({ where: { workspaceId } });
+
+  const segments = await prisma.segment.findMany({
+    where: { workspaceId },
+  });
+
   return NextResponse.json(segments);
 }
 
 export async function POST(request: Request) {
   const workspaceId = await requireWorkspaceId();
   await ensurePermission(workspaceId, "campaigns", "create");
+
   const payload = segmentSchema.parse(await request.json());
-  const segment = await prisma.segment.create({ data: { ...payload, workspaceId } });
+
+  const segment = await prisma.segment.create({
+    data: {
+      name: payload.name,
+      entityType: payload.entityType,
+      // Cast explícito a JSON de Prisma para evitar el error de tipos
+      filter: payload.filter as Prisma.InputJsonValue,
+      workspaceId,
+    },
+  });
+
   return NextResponse.json({ message: "SEGMENT_CREATED", segment });
 }
