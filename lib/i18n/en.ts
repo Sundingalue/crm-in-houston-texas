@@ -216,7 +216,7 @@ export const dictionaryEn = {
       subtitle: "Add stakeholder details",
       name: "Full name",
       phone: "Phone",
-      title: "Role",
+      roleLabel: "Role",
     },
     account: {
       title: "Create account",
