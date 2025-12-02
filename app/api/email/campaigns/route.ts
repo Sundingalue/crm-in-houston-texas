@@ -23,30 +23,49 @@ const campaignDeleteSchema = z.object({ id: z.string() });
 export async function GET() {
   const workspaceId = await requireWorkspaceId();
   const enabled = await ensureFeatureEnabled(workspaceId, "campaigns");
-  if (!enabled) return NextResponse.json({ message: "CAMPAIGNS_DISABLED" }, { status: 403 });
+  if (!enabled) {
+    return NextResponse.json(
+      { message: "CAMPAIGNS_DISABLED" },
+      { status: 403 }
+    );
+  }
+
   await ensurePermission(workspaceId, "campaigns", "view");
+
   const campaigns = await prisma.campaign.findMany({
     where: { workspaceId },
     orderBy: { createdAt: "desc" },
   });
+
   return NextResponse.json(campaigns);
 }
 
 export async function POST(request: Request) {
   const workspaceId = await requireWorkspaceId();
   const enabled = await ensureFeatureEnabled(workspaceId, "campaigns");
-  if (!enabled) return NextResponse.json({ message: "CAMPAIGNS_DISABLED" }, { status: 403 });
+  if (!enabled) {
+    return NextResponse.json(
+      { message: "CAMPAIGNS_DISABLED" },
+      { status: 403 }
+    );
+  }
+
   await ensurePermission(workspaceId, "campaigns", "create");
+
   const payload = campaignSchema.parse(await request.json());
+
   const campaign = await prisma.campaign.create({
     data: {
       name: payload.name,
       subject: payload.subject,
       channel: payload.channel,
       status: payload.status,
+      body: payload.body ?? null,
+      segment: payload.segment ?? null,
       workspaceId,
     },
   });
+
   return NextResponse.json({
     message: "Campaña programada",
     campaign,
@@ -56,9 +75,17 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   const workspaceId = await requireWorkspaceId();
   const enabled = await ensureFeatureEnabled(workspaceId, "campaigns");
-  if (!enabled) return NextResponse.json({ message: "CAMPAIGNS_DISABLED" }, { status: 403 });
+  if (!enabled) {
+    return NextResponse.json(
+      { message: "CAMPAIGNS_DISABLED" },
+      { status: 403 }
+    );
+  }
+
   await ensurePermission(workspaceId, "campaigns", "edit");
+
   const payload = campaignUpdateSchema.parse(await request.json());
+
   const campaign = await prisma.campaign.update({
     where: { id: payload.id, workspaceId },
     data: {
@@ -66,19 +93,31 @@ export async function PATCH(request: Request) {
       subject: payload.subject,
       channel: payload.channel,
       status: payload.status,
-      body: payload.body,
-      segment: payload.segment,
+      body: payload.body ?? null,
+      segment: payload.segment ?? null,
     },
   });
+
   return NextResponse.json({ message: "Campaña actualizada", campaign });
 }
 
 export async function DELETE(request: Request) {
   const workspaceId = await requireWorkspaceId();
   const enabled = await ensureFeatureEnabled(workspaceId, "campaigns");
-  if (!enabled) return NextResponse.json({ message: "CAMPAIGNS_DISABLED" }, { status: 403 });
+  if (!enabled) {
+    return NextResponse.json(
+      { message: "CAMPAIGNS_DISABLED" },
+      { status: 403 }
+    );
+  }
+
   await ensurePermission(workspaceId, "campaigns", "delete");
+
   const payload = campaignDeleteSchema.parse(await request.json());
-  await prisma.campaign.delete({ where: { id: payload.id, workspaceId } });
+
+  await prisma.campaign.delete({
+    where: { id: payload.id, workspaceId },
+  });
+
   return NextResponse.json({ message: "Campaña eliminada" });
 }

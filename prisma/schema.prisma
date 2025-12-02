@@ -4,8 +4,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider         = "postgresql"
+  url              = env("DATABASE_URL")
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
@@ -150,6 +150,8 @@ model Campaign {
   sent        Int            @default(0)
   opened      Int            @default(0)
   clicked     Int            @default(0)
+  body        String?
+  segment     String?
   workspace   Workspace      @relation(fields: [workspaceId], references: [id])
   workspaceId String
   createdAt   DateTime       @default(now())
