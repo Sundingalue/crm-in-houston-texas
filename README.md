@@ -1,4 +1,4 @@
-## Aurora CRM – Plantilla comercial lista para IA
+## "CRM In Houston Texas" – Plantilla comercial lista para IA
 
 Plantilla completa de CRM de ventas construida con Next.js 16 (App Router + API routes) y React 19. Incluye UI pre-diseñada, soporte multitenant, autenticación con NextAuth, base de datos Prisma/SQLite y puntos de integración para email, WhatsApp, telefonía y agentes de IA. Todo está disponible en español e inglés y listo para clonar/editar desde VSCode.
 

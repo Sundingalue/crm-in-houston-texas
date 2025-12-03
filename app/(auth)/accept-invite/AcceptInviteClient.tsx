@@ -56,7 +56,7 @@ export function AcceptInviteClient() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 px-4">
       <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-md">
-        <p className="text-xs uppercase tracking-[0.4em] text-white/50">Aurora CRM</p>
+        <p className="text-xs uppercase tracking-[0.4em] text-white/50">CRM In Houston Texas</p>
         <h1 className="mt-2 text-3xl font-semibold text-white">Aceptar invitación</h1>
         <p className="mt-1 text-sm text-white/70">Crea tu acceso para el workspace asignado.</p>
         <div className="mt-6 space-y-3 text-sm text-white/90">

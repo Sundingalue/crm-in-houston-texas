@@ -1,7 +1,7 @@
 export const dictionaryEs = {
   locale: "es",
   common: {
-    appName: "Aurora CRM",
+    appName: "CRM In Houston Texas",
     suite: "Plataforma Comercial Inteligente",
     searchPlaceholder: "Busca acuerdos, actividades o empresas...",
     askAi: "Preguntar a la IA",
@@ -49,7 +49,7 @@ export const dictionaryEs = {
     domain: "Dominio personalizado",
     username: "Usuario o email",
     password: "Contraseña",
-    headline: "Impulsa tus equipos comerciales con Aurora CRM",
+    headline: "Impulsa tus equipos comerciales con CRM In Houston Texas",
     subheadline: "Workspaces dedicados, IA integrada y canales omnicanal listos para desplegar en minutos.",
     form: {
       email: "Correo corporativo",

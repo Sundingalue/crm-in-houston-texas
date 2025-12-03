@@ -1,7 +1,7 @@
 const dictionaryEn = {
   locale: "en",
   common: {
-    appName: "Aurora CRM",
+    appName: "CRM In Houston Texas",
     suite: "Intelligent Revenue Platform",
     searchPlaceholder: "Search deals, activities or companies...",
     askAi: "Ask AI",
@@ -47,7 +47,7 @@ const dictionaryEn = {
     domain: "Custom domain",
     username: "Username or email",
     password: "Password",
-    headline: "Launch modern revenue workspaces with Aurora CRM",
+    headline: "Launch modern revenue workspaces with CRM In Houston Texas",
     subheadline: "Tenant-by-tenant branding, native AI copilots and multichannel engagement out of the box.",
     form: {
       email: "Work email",

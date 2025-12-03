@@ -1,4 +1,4 @@
-# Aurora CRM Implementation & Management Guide
+# "CRM In Houston Texas" Implementation & Management Guide
 
 ## 1. Vision
 - Pre-designed web CRM ready for VSCode customization

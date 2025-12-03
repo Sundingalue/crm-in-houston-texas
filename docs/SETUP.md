@@ -1,4 +1,4 @@
-# Aurora CRM — Device Setup Guide
+# CRM In Houston Texas — Device Setup Guide
 
 This guide walks you (or any teammate) through bringing the CRM template to a fresh machine.
 

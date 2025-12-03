@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Aurora CRM | Plataforma Comercial Inteligente",
+  title: "CRM In Houston Texas | Plataforma Comercial Inteligente",
   description:
     "Plantilla CRM de ventas con analítica, automatización y soporte para agentes de IA lista para personalizar.",
 };
